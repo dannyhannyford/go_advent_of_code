@@ -29,18 +29,21 @@ func read_file(file_name string) (int, error) {
 }
 
 func read_lines_pt_2(scanner *bufio.Scanner, sum int) int {
-	var first, last, double_digit, word_start_idx int
-	var found_first, in_word bool
+	var first, last, double_digit int
+	var found_first bool
+	var queue []string
 	
 	trie_check := oneNineTrie()
 	string_to_int := string_to_int()
-	
+	// runtime.Breakpoint()
 	for scanner.Scan() {
 		line := scanner.Text()
 		// traverse through each char in the line
 		for i := 0; i < len(line); i++ {
 			if isDigit(line[i]) {
-				in_word = false
+				if len(queue) > 0 {
+					queue = queue[:0]
+				}
 				current := int(line[i] - '0')
 				if !found_first {
 					first = current
@@ -49,22 +52,31 @@ func read_lines_pt_2(scanner *bufio.Scanner, sum int) int {
 				last = current
 			}
 			if !isDigit(line[i]) {
-				char := string(line[i])
-				if !in_word {
-					in_word = true
-				}
-				full_word := string(line[word_start_idx: i+1])
-				// if substring, keep track
-				if trie_check.StartsWith(char) {
-					if trie_check.Search((full_word)) {
-						// swap from string to number
-						current := string_to_int[full_word]
-						if !found_first {
-							first = current
-							found_first = true
+				// put char on queue
+				
+				if len(queue) > 0 {
+					for k := 0; k < len(queue); k++ {
+						queue[k] = queue[k]+string(line[i])
+						if trie_check.Search(queue[k]) {
+							curr_str, _ := dequeue(queue)
+							current := string_to_int[curr_str]
+							if !found_first {
+								first = current
+								found_first = true
+							}
+							last = current
+							k--
+							continue
 						}
-						last = current
+						if trie_check.StartsWith(queue[k]) {
+							continue
+						}
+						queue = append(queue[:k], queue[k+1:]...)
+						k--
 					}
+				}
+				if trie_check.StartsWith(string(line[i])) {
+					queue = append(queue, string(line[i]))
 				}
 			}
 		}
@@ -84,6 +96,7 @@ func read_lines_pt_2(scanner *bufio.Scanner, sum int) int {
 func read_lines_pt_1(scanner *bufio.Scanner, sum int) int {
 	var first, last, double_digit int
 	var found_first bool
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		// traverse through each char in the line
@@ -109,6 +122,15 @@ func read_lines_pt_1(scanner *bufio.Scanner, sum int) int {
 		sum += double_digit
 	}
 	return sum
+}
+
+func dequeue(arr []string) (string, bool) {
+	if len(arr) == 0 {
+		return "", false
+	}
+	value := arr[0]
+	arr = arr[1:]
+	return value, true
 }
 
 func isDigit(r byte) bool {
