@@ -67,36 +67,44 @@ func read_lines_pt_1(scanner *bufio.Scanner, sum int) (int, error){
 
 func read_lines_pt_2(scanner *bufio.Scanner, sum int) (int, error) {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
-	maxCubes := map[string]int{
-		"red": 12,
-		"green": 13,
-		"blue": 14,
-	}
-	minCubes := map[string]int{
-		"red": 0,
-		"green": 0,
-		"blue": 0,
-	}
+	
 	
 	// sum of ID's of possible games
-	game_id := 1
 	for scanner.Scan() {
 		line := scanner.Text()
 		start_idx := strings.IndexByte(line, ':')
 		// start at :
 		cube_substring := line[start_idx+1:]
 		cubeSlice := strings.Fields(cube_substring)
-		if validBag, err := isValidBag(cubeSlice, maxCubes, logger); err == nil {
-			// add possible game_id to sum
-			if validBag {
-				sum += game_id
-				logger.Info("success, add to sum", "game_id", game_id, "curr_sum", sum)
-			}
+		if power, err := countMinCubes(cubeSlice, logger); err == nil {
+			logger.Info("min Cubes in loop", "minCubes", power)
+			sum += power
 		}
-		game_id++
 	}
-	logger.Info("sum", "sum", sum)
 	return sum, nil
+}
+
+func countMinCubes(cubeSlice []string, logger *slog.Logger) (int, error) {
+	minCubes := map[string]int{
+		"red": 0,
+		"green": 0,
+		"blue": 0,
+	}
+	for i := 0; i < len(cubeSlice); i++ {
+		if num, err := strconv.Atoi(cubeSlice[i]); err == nil {
+			color := cubeSlice[i+1]
+			if color[len(color)-1] == ';' || color[len(color)-1] == ',' {
+				color = color[0:len(color)-1]
+			}
+			if num > minCubes[color] {
+				logger.Info("new min cube", "color", color, "minCubes", minCubes[color], "num of cubes", num)
+				minCubes[color] = num
+			}
+			i++
+		}
+	}
+	result := minCubes["red"]*minCubes["green"]*minCubes["blue"]
+	return result, nil
 }
 
 func isValidBag(cubeSlice []string, maxCubes map[string]int, logger *slog.Logger) (bool, error) {
