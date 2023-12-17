@@ -101,5 +101,7 @@ func calibrationWorker(wg *sync.WaitGroup, inputChan <-chan string, resultChan c
 
 However, this isn't going to make much of a difference in performance. If you look at the output of this you'll notice that the majority of time (~85% in my local test) is spent reading the file while the computation is trivial and fast. You're not going to benefit from parallelization much here. In fact, the overhead of managing the threads might make this slower.
 
+# range in go
+
 # extend v implements(duck typing)
 https://stackoverflow.com/questions/38834625/whats-the-difference-between-extends-and-implements-in-typescript
