@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 )
 
 // gear ratios
@@ -44,30 +45,80 @@ func build_matrix_pt_1(scanner *bufio.Scanner, sum int) (int, error) {
 		fmt.Println(matrix[i])
 	}
 
-	matrix = islandTravel(matrix)
+	matrix = searchOcean(matrix)
 	fmt.Println("after traversal:")
-	logger.Info("pt1", "sum", sum, "matrix", matrix)
+	for i:=0; i < len(matrix); i++ {
+		logger.Info("pt1", "sum", sum, "matrix", matrix[i])
+	}
 	return sum, nil
 }
 
-func islandTravel(matrix [][]string) [][]string {
+func searchOcean(matrix [][]string) [][]string {
+
+
+
 	for row := 0; row < len(matrix); row++ {
 		for col := 0; col < len(matrix[row]); col++ {
-			if isValid(matrix, row, col) {
-
+			if matrix[row][col] == "." {
+				continue
 			}
+			if !isDigit(matrix[row][col]) {
+			//	slog.Info("searchOcean:", "symbol", matrix[row][col])
+				continue
+			}
+			//slog.Info("explore the Island:", "num", matrix[row][col])
+			exploreIsland(matrix, row, col)
+
 		}
 	}
 	return matrix
 }
 
-func getNeighbors(matrix [][]string, row, col int) [][]string {
-	neighbors := make([][]string, 0)
-	// down right
-	if row-1 >= 0 {
 
+
+// typing issues
+func exploreIsland(matrix [][]string, row, col int) [][]int {
+	islandSum := 0
+	found_god := false
+	unvisitedNeighbors := [][]int{{}}
+	queue := [][]int{{row, col}}
+
+	for len(queue) > 0 {
+		currNode := queue[0]
+		queue = queue[1:]
+		row, col := currNode[0], currNode[1]
+		if isDigit(matrix[row][col]) {
+			islandSum *= 10
+			newSum, err := strconv.Atoi(matrix[row][col])
+			if err !=nil {
+				fmt.Println(err)
+			}
+			fmt.Println(newSum)
+			islandSum += newSum
+			fmt.Println(islandSum)
+		}
+		unvisitedNeighbors, found_god = exploreNeighbors(row, col, matrix, found_god)
+		fmt.Println(unvisitedNeighbors)
 	}
+
+
+	return queue
+}
+// typing issues
+func exploreNeighbors(row, col int, matrix [][]string, found_god bool) ([][]int, bool){
+	if !isValid(matrix, row, col) {
+		fmt.Println("invalid")
+	}
+	if !isDigit(matrix[row][col]) {
+		found_god = true
+		slog.Info("symbol:", "found_god", found_god)
+	}
+
+	// down right
 	// down
+	if row+1 < len(matrix) {
+		
+	}
 	// down left
 	// left
 	if col-1 >= 0 {
@@ -80,7 +131,12 @@ func getNeighbors(matrix [][]string, row, col int) [][]string {
 	}
 	// up right
 	// right
-
+	if col+1 < len(matrix[0]) {
+		if isDigit(matrix[row][col]) {
+			
+		}
+	}
+	return matrix[row][col], found_god
 }
 
 func isValid(matrix [][]string, row int, col int) bool {
@@ -91,11 +147,10 @@ func isValid(matrix [][]string, row int, col int) bool {
 	return true
 }
 
-func isDigit(matrix [][]string, row int, col int) bool {
-
+func isDigit(r string) bool {
+	return r >= "0" && r <= "9"
 }
-
-
+// ------------------------------------------------------------------------------
 
 func logger_replace(groups []string, a slog.Attr) slog.Attr {
 		if a.Key == slog.TimeKey && len(groups) == 0 {
@@ -108,38 +163,30 @@ func logger_replace(groups []string, a slog.Attr) slog.Attr {
 		return a
 }
 
-
-
-
-func isDigit(r byte) bool {
-	return r >= '0' && r <= '9'
-}
-
 func read_lines_pt2(scanner * bufio.Scanner, sum int) (int, error) {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	logger.Info("pt2", "sum", sum)
 	return sum, nil
 }
 
-
 func read_file(file_name string) (int, error) {
-var sum int
+	var sum int
 
-file, err := os.Open(file_name)
-if err != nil {
-	return 0, err
-}
+	file, err := os.Open(file_name)
+	if err != nil {
+		return 0, err
+	}
 
-defer file.Close()
+	defer file.Close()
 
-scanner := bufio.NewScanner(file)
-sum, err = build_matrix_pt_1(scanner, sum)
+	scanner := bufio.NewScanner(file)
+	sum, err = build_matrix_pt_1(scanner, sum)
 
-if err := scanner.Err(); err != nil {
-	return 0, err
-}
+	if err := scanner.Err(); err != nil {
+		return 0, err
+	}
 
-return sum, nil
+	return sum, nil
 
 }
 
