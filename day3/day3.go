@@ -22,15 +22,19 @@ import (
 // C
 // E
 
-/*
-if isDigit(line[i]) {
-	num := int(line[i] - '0')
-	logger.Info("Is it a num?", "num", num)
-}
-*/
+// PT2
 
+
+func build_matrix_pt_2(scanner *bufio.Scanner, sum int) (int, error) {
+	// go until you find a gear
+	return sum, nil
+}
+
+
+
+// --------------------------------------------------------------
 func build_matrix_pt_1(scanner *bufio.Scanner, sum int) (int, error) {
-	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{ReplaceAttr: logger_replace}))
+	// logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{ReplaceAttr: logger_replace}))
 	var matrix [][]string
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -45,20 +49,28 @@ func build_matrix_pt_1(scanner *bufio.Scanner, sum int) (int, error) {
 		fmt.Println(matrix[i])
 	}
 
-	matrix = searchOcean(matrix)
-	fmt.Println("after traversal:")
-	for i:=0; i < len(matrix); i++ {
-		logger.Info("pt1", "sum", sum, "matrix", matrix[i])
-	}
+	matrix, sum = searchOcean(matrix, sum)
 	return sum, nil
 }
 
-func searchOcean(matrix [][]string) [][]string {
-
+func searchOcean(matrix [][]string, sum int) ([][]string, int) {
+	var nodeMatrix [][]bool
+	rows := len(matrix)
+	for i := 0; i < rows; i++ {
+		cols := len(matrix[i])
+		row := make([]bool, cols)
+		nodeMatrix = append(nodeMatrix, row)
+		fmt.Println(row)
+	}
+	visitedNodes := &nodeMatrix
+	var islandSum int
 
 
 	for row := 0; row < len(matrix); row++ {
 		for col := 0; col < len(matrix[row]); col++ {
+			if (*visitedNodes)[row][col] {
+				continue
+			}
 			if matrix[row][col] == "." {
 				continue
 			}
@@ -67,76 +79,117 @@ func searchOcean(matrix [][]string) [][]string {
 				continue
 			}
 			//slog.Info("explore the Island:", "num", matrix[row][col])
-			exploreIsland(matrix, row, col)
-
+			
+			islandSum = exploreIsland(matrix, row, col, visitedNodes)
+			sum += islandSum
+			if islandSum != 0 {
+				slog.Info("Island explored:", "Sum", sum)
+			}
 		}
 	}
-	return matrix
+	return matrix, sum
 }
 
 
 
 // typing issues
-func exploreIsland(matrix [][]string, row, col int) [][]int {
+func exploreIsland(matrix [][]string, row, col int, visitedNodes *[][]bool) (int) {
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{ReplaceAttr: logger_replace}))
 	islandSum := 0
 	found_god := false
-	unvisitedNeighbors := [][]int{{}}
+	var ok bool
+	// unvisitedNeighbors := [][]int{{}}
 	queue := [][]int{{row, col}}
 
 	for len(queue) > 0 {
 		currNode := queue[0]
 		queue = queue[1:]
 		row, col := currNode[0], currNode[1]
+		
 		if isDigit(matrix[row][col]) {
 			islandSum *= 10
 			newSum, err := strconv.Atoi(matrix[row][col])
 			if err !=nil {
 				fmt.Println(err)
 			}
-			fmt.Println(newSum)
 			islandSum += newSum
-			fmt.Println(islandSum)
+			// logger.Info("Sums:", "islandSum", islandSum, "newSum",newSum )
 		}
-		unvisitedNeighbors, found_god = exploreNeighbors(row, col, matrix, found_god)
-		fmt.Println(unvisitedNeighbors)
-	}
-
-
-	return queue
-}
-// typing issues
-func exploreNeighbors(row, col int, matrix [][]string, found_god bool) ([][]int, bool){
-	if !isValid(matrix, row, col) {
-		fmt.Println("invalid")
-	}
-	if !isDigit(matrix[row][col]) {
-		found_god = true
-		slog.Info("symbol:", "found_god", found_god)
-	}
-
-	// down right
-	// down
-	if row+1 < len(matrix) {
+		row, col, found_god, ok = exploreNeighborsGoRight(row, col, matrix, visitedNodes, found_god)
+		// logger.Info("explore neighbors:", "row", row, "col", col, "foundGod", found_god, "islandSum", islandSum)
+		if ok {
+			queue = append(queue, []int{row, col})
+		}
+		//logger.Info("postQueue", "new Queue", queue, "foundgod", found_god)
 		
 	}
+	if found_god {
+		logger.Info("end of island:", "island #", islandSum)
+		return islandSum
+	}
+
+	return 0
+}
+// typing issues
+func exploreNeighborsGoRight(row, col int, matrix [][]string, visitedNodes *[][]bool, found_god bool) (int, int, bool, bool){
+	// if valid and not a number it's a symbol
+
+	// down right
+	if row+1 < len(matrix) && col+1 <len(matrix[0]){
+		if !isDigit(matrix[row+1][col+1]) && isValid(matrix, row+1, col+1){
+			found_god = true
+		}
+	}
+	// down
+	if row+1 < len(matrix) {
+		if !isDigit(matrix[row+1][col]) && isValid(matrix, row+1, col){
+			found_god = true
+		}
+	}
 	// down left
+	if row+1 < len(matrix) && col-1 >= 0 {
+		if !isDigit(matrix[row+1][col-1]) && isValid(matrix, row+1, col-1){
+			found_god = true
+		}
+	}
 	// left
 	if col-1 >= 0 {
+		if !isDigit(matrix[row][col-1]) && isValid(matrix, row, col-1){
+			found_god = true
+		}
 
 	}
 	// up left
+	if row-1 >= 0 && col-1 >= 0 {
+		if !isDigit(matrix[row-1][col-1]) && isValid(matrix, row-1, col-1){
+			found_god = true
+		}
+	}
 	// up
 	if row-1 >= 0 {
+		if !isDigit(matrix[row-1][col]) && isValid(matrix, row-1, col){
+			found_god = true
+		}
 
 	}
 	// up right
-	// right
-	if col+1 < len(matrix[0]) {
-		if isDigit(matrix[row][col]) {
-			
+	if row-1 >= 0 && col+1 < len(matrix[0]) {
+		if !isDigit(matrix[row-1][col+1]) && isValid(matrix, row-1, col+1){
+			found_god = true
 		}
 	}
-	return matrix[row][col], found_god
+	// right
+	if col+1 < len(matrix[0]) {
+		if !isDigit(matrix[row][col+1]) && isValid(matrix, row, col+1) {
+			found_god = true
+			// slog.Info("symbol:", "found_god", found_god)
+		}
+		if isDigit(matrix[row][col+1]) {
+			(*visitedNodes)[row][col+1] = true
+			return row, col+1, found_god, true
+		}
+	}
+	return 0, 0, found_god, false
 }
 
 func isValid(matrix [][]string, row int, col int) bool {
@@ -163,12 +216,6 @@ func logger_replace(groups []string, a slog.Attr) slog.Attr {
 		return a
 }
 
-func read_lines_pt2(scanner * bufio.Scanner, sum int) (int, error) {
-	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
-	logger.Info("pt2", "sum", sum)
-	return sum, nil
-}
-
 func read_file(file_name string) (int, error) {
 	var sum int
 
@@ -191,10 +238,10 @@ func read_file(file_name string) (int, error) {
 }
 
 func main() {
-	result, err := read_file("test.txt")
+	result, err := read_file("input.txt")
 	if err != nil {
 		fmt.Println(err)
 		return;
 	}
-	fmt.Println(result)
+	fmt.Println("after traversal:", result)
 }
